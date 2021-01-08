@@ -35,6 +35,7 @@ OpenVR provides a layer for drivers to interact with applications. The driver fo
 | A - Mini B Cable | 2 (~5m) | For connecting the arduinos to a computer. The length you choose is up to you and you're playspace, but ~5m is a good length |
 | Mini Breadboard | 2 | For wiring the components together. You could also use a prototype board for a more permanent solution |
 | PTFE Tubing | ~10cm | I cut them up to use on the fingers as guides for the wire, but more permanent solutions like threading the wires through the glove could also be used. PTFE tubing is a common thing to have in 3D printing |
+| Elastic chord | ~ 1m | This is used to secure the 3d printed part to the hand. Button hole elastic works well. |
 
 ## How can I get started?
 The GitHub Wiki contains instructions needed to get started with this project
