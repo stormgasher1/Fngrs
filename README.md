@@ -23,6 +23,19 @@ OpenVR provides a layer for drivers to interact with applications. The driver fo
 * Soldering knowledge and electronic knowledge is required for building the glove
 * <b>Again,</b>  I would like to re-iterate that this project is not something that I would recommend people to spend money on - this is more of a proof of concept device to show that cheap finger tracking is poosible. However, if you are willing to or have the components already available I would appreciate feedback on the project.
 
+## Equipment needed
+| Name      | Amount needed | Purpose |
+| ----------- | ----------- | ----------- | 
+| 60mm 10K slide potentiometer | 8 |  Measuring the finger position |
+| Fishing Wire | > 2m | Connects the potentiometer to the tips of the finger |
+| Rubber/Plaiting Bands | 8 | (typically come in batches of 100 or more) For getting the potentiometer to return to the default position. I've found that horse plaiting bands are the best option for this, for the cheapest price, but it is important to get high quality ones, as cheaper ones often have a low elastic limit |
+| Arduino nano | 2 | Clones are available for around £10 for a pack of 3 |
+| Buttons | (~4) | It is possible to add as many buttons as the arduino supports, or none at all - it's up to you how many you want |
+| Joystick | (2) | It's not essential to use them, but if you are going to buy some, it's a good idea to get ones with buttons in-built |
+| A - Mini B Cable | 2 (~5m) | For connecting the arduinos to a computer. The length you choose is up to you and you're playspace, but ~5m is a good length |
+| Mini Breadboard | 2 | For wiring the components together. You could also use a prototype board for a more permanent solution |
+| PTFE Tubing | ~10cm | I cut them up to use on the fingers as guides for the wire, but more permanent solutions like threading the wires through the glove could also be used. PTFE tubing is a common thing to have in 3D printing |
+
 ## How can I get started?
 The GitHub Wiki contains instructions needed to get started with this project
 
