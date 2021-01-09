@@ -18,6 +18,7 @@ using namespace std;
 
 #define DEVICE_NAME "fngrs"
 
+static const char* c_settings_section = "driver_fngrs";
 static const char* device_manufacturer = "danwillm";
 static const char* device_controller_type = DEVICE_NAME;
 static const char* device_model_number = DEVICE_NAME "1";
@@ -25,14 +26,6 @@ static const char* right_controller_serial = "FNGRS1";
 static const char* left_controller_serial = "FNGRS2";
 static const char* device_render_model_name = "{" DEVICE_NAME "}/rendermodels/" DEVICE_NAME;
 static const char* device_input_profile_path = "{" DEVICE_NAME "}/input/" DEVICE_NAME "_profile.json";
-
-static const float c_x_offset = -0.07f; //- forward
-static const float c_y_offset = -0.08f; //+ up
-static const float c_z_offset = 0.07f; //+ right
-
-//Set appropriate COM ports here (will be included in settings soon)
-static const char* c_right_arduino_port = "\\\\.\\COM9";
-static const char* c_left_arduino_port = "\\\\.\\COM8";
 
 //Indexes for components - anything that you can bind in the steamvr bindings dashboard
 static const enum ComponentIndex : int {
@@ -70,6 +63,8 @@ public:
 	Serial* m_arduino_serial;
 
 	char receivedString[MAX_DATA_LENGTH];
+
+	char m_arduino_port[1024];
 
 	int m_last_component_value[6] = { 0,0,0,0,0,0 };
 
@@ -130,6 +125,10 @@ public:
 		//This haptic component doesn't do anything (at least, yet), but some games require it to be bound to something, so just create a component for them to use.
 		vr::VRDriverInput()->CreateHapticComponent(props, "output/haptic", &m_h_component_values[7]);
 
+		float c_x_offset = vr::VRSettings()->GetFloat(c_settings_section, "x_offset");
+		float c_y_offset = vr::VRSettings()->GetFloat(c_settings_section, "y_offset");
+		float c_z_offset = vr::VRSettings()->GetFloat(c_settings_section, "z_offset");
+
 		if (m_role == TrackedControllerRole_RightHand) {
 			vr::VRDriverInput()->CreateBooleanComponent(props, "/input/trigger/click", &m_h_component_values[ComponentIndex::BTN_TRIGGER]);
 
@@ -143,6 +142,9 @@ public:
 				right_fist_pose,
 				NUM_BONES,
 				&m_skeleton);
+
+			vr::VRSettings()->GetString(c_settings_section, "right_arduino_port", m_arduino_port, sizeof(m_arduino_port));
+
 		}
 		else {
 			vr::VRDriverInput()->CreateBooleanComponent(props, "/input/system/click", &m_h_component_values[ComponentIndex::BTN_TRIGGER]);
@@ -158,6 +160,7 @@ public:
 				NUM_BONES,
 				&m_skeleton);
 
+			vr::VRSettings()->GetString(c_settings_section, "left_arduino_port", m_arduino_port, sizeof(m_arduino_port));
 		}
 
 		m_active = true;
@@ -280,10 +283,13 @@ public:
 
 	void ParseSerial() {
 		if (!m_found_arduino) {
-			m_arduino_serial = new Serial(m_role == TrackedControllerRole_RightHand ? c_right_arduino_port : c_left_arduino_port);
+			m_arduino_serial = new Serial(m_arduino_port);
 
 			if (m_arduino_serial->IsConnected()) {
-				DebugDriverLog("Left arduino is connected");
+				DebugDriverLog("Arduino connected successfully");
+			}
+			else {
+				DebugDriverLog("Could not connected to arduino");
 			}
 
 			m_found_arduino = true;
