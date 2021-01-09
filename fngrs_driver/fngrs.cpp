@@ -26,8 +26,10 @@ static const char* left_controller_serial = "FNGRS2";
 static const char* device_render_model_name = "{" DEVICE_NAME "}/rendermodels/" DEVICE_NAME;
 static const char* device_input_profile_path = "{" DEVICE_NAME "}/input/" DEVICE_NAME "_profile.json";
 
-static const float c_y_offset = -0.05f; //Up down offset for the controller
-static const float c_x_offset = -0.05f;
+static const float c_x_offset = -0.07f; //- forward
+static const float c_y_offset = -0.08f; //+ up
+static const float c_z_offset = 0.07f; //+ right
+
 //Set appropriate COM ports here (will be included in settings soon)
 static const char* c_right_arduino_port = "\\\\.\\COM9";
 static const char* c_left_arduino_port = "\\\\.\\COM8";
@@ -51,6 +53,7 @@ public:
 	VRInputComponentHandle_t m_skeleton;
 	ETrackedControllerRole m_role;
 	string m_serial_number;
+	vr::HmdVector3_t m_offset_vector;
 
 	bool m_found_controller;
 
@@ -97,10 +100,6 @@ public:
 		m_pose.deviceIsConnected = true;
 		m_pose.qDriverFromHeadRotation.w = 1;
 		m_pose.qWorldFromDriverRotation.w = 1;
-		m_pose.vecPosition[0] = 0;
-		m_pose.vecPosition[1] = -.5;
-		m_pose.vecPosition[2] = -1.5;
-
 		m_pose.poseTimeOffset = -0.010f;
 		const char* serial_number = m_role == TrackedControllerRole_RightHand ? "FNGRS1" : "FNGRS2";
 
@@ -122,12 +121,6 @@ public:
 		//Setup buttons
 		vr::VRDriverInput()->CreateBooleanComponent(props, "/input/joystick/click", &m_h_component_values[ComponentIndex::JOYSTICK_BTN]);
 
-		if (m_role == TrackedControllerRole_RightHand) {
-			vr::VRDriverInput()->CreateBooleanComponent(props, "/input/trigger/click", &m_h_component_values[ComponentIndex::BTN_TRIGGER]);
-		}
-		else {
-			vr::VRDriverInput()->CreateBooleanComponent(props, "/input/system/click", &m_h_component_values[ComponentIndex::BTN_TRIGGER]);
-		}
 
 		vr::VRDriverInput()->CreateBooleanComponent(props, "/input/A/click", &m_h_component_values[ComponentIndex::BTN_A]);
 
@@ -138,6 +131,10 @@ public:
 		vr::VRDriverInput()->CreateHapticComponent(props, "output/haptic", &m_h_component_values[7]);
 
 		if (m_role == TrackedControllerRole_RightHand) {
+			vr::VRDriverInput()->CreateBooleanComponent(props, "/input/trigger/click", &m_h_component_values[ComponentIndex::BTN_TRIGGER]);
+
+			m_offset_vector = { c_x_offset, c_y_offset, c_z_offset };
+
 			vr::EVRInputError error = VRDriverInput()->CreateSkeletonComponent(props,
 				"/input/skeleton/right",
 				"/skeleton/hand/right",
@@ -148,6 +145,10 @@ public:
 				&m_skeleton);
 		}
 		else {
+			vr::VRDriverInput()->CreateBooleanComponent(props, "/input/system/click", &m_h_component_values[ComponentIndex::BTN_TRIGGER]);
+
+			m_offset_vector = { -c_x_offset, c_y_offset, c_z_offset };
+
 			vr::EVRInputError error = VRDriverInput()->CreateSkeletonComponent(props,
 				"/input/skeleton/left",
 				"/skeleton/hand/left",
@@ -156,6 +157,7 @@ public:
 				left_fist_pose,
 				NUM_BONES,
 				&m_skeleton);
+
 		}
 
 		m_active = true;
@@ -207,19 +209,19 @@ public:
 			//Make sure that the pose is valid, if not, use a different way of tracking them
 			if (hmd_pose[m_controller_id].bPoseIsValid)
 			{
-				//Get our proprietary controller's matrix
-				vr::HmdQuaternion_t controller_rotation = GetRotation(hmd_pose[m_controller_id].mDeviceToAbsoluteTracking);
+				vr::HmdMatrix34_t matrix = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking;
 
-				m_pose.vecPosition[0] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[0][3] + GetXOffsetFromRoll(controller_rotation, c_x_offset, m_role == TrackedControllerRole_RightHand); //+ right
-				m_pose.vecPosition[1] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[1][3] + GetYOffsetFromRoll(controller_rotation, c_y_offset, m_role == TrackedControllerRole_RightHand); //+ up
-				m_pose.vecPosition[2] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[2][3]; //- forward
+				vr::HmdMatrix33_t rotation_matrix = Get33Matrix(matrix);
 
-				vr::HmdMatrix34_t apply_rotation;
+				vr::HmdVector3_t vector_offset = GetVectorOffset(rotation_matrix, m_offset_vector);
 
-				//Account for rotation of the hand
-				createRotationMatrix(apply_rotation, 0, DegToRad(-50));
+				m_pose.vecPosition[0] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[0][3] + vector_offset.v[0];
+				m_pose.vecPosition[1] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[1][3] + vector_offset.v[1];
+				m_pose.vecPosition[2] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[2][3] + vector_offset.v[2]; //- forward
 
-				vr::HmdQuaternion_t offset_quaternion = GetRotation(apply_rotation);
+
+				vr::HmdQuaternion_t controller_rotation = GetRotation(matrix);
+				vr::HmdQuaternion_t offset_quaternion = QuaternionFromAngle(1, 0, 0, DegToRad(-45));
 
 				//merge rotation
 				m_pose.qRotation = MultiplyQuaternion(controller_rotation, offset_quaternion);

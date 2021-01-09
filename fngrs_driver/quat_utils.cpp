@@ -90,6 +90,25 @@ vr::HmdQuaternion_t GetRotation(vr::HmdMatrix34_t matrix) {
 
 	return q;
 }
+
+vr::HmdMatrix33_t Get33Matrix(vr::HmdMatrix34_t matrix) {
+	vr::HmdMatrix33_t result = { {
+		{matrix.m[0][0], matrix.m[0][1], matrix.m[0][2]},
+		{matrix.m[1][0], matrix.m[1][1], matrix.m[1][2]},
+		{matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]}
+		} };
+
+	return result;
+}
+vr::HmdVector3_t GetVectorOffset(vr::HmdMatrix33_t matrix, vr::HmdVector3_t vector) {
+	vr::HmdVector3_t result;
+
+	result.v[0] = matrix.m[0][0] * vector.v[0] + matrix.m[0][1] * vector.v[1] + matrix.m[0][2] * vector.v[2];
+	result.v[1] = matrix.m[1][0] * vector.v[0] + matrix.m[1][1] * vector.v[1] + matrix.m[1][2] * vector.v[2];
+	result.v[2] = matrix.m[2][0] * vector.v[0] + matrix.m[2][1] * vector.v[1] + matrix.m[2][2] * vector.v[2];
+
+	return result;
+}
 vr::HmdQuaternion_t QuaternionFromAngle(const double& xx, const double& yy, const double& zz, const double& a)
 {
 	// Here we calculate the sin( theta / 2) once for optimization
@@ -120,7 +139,7 @@ vr::HmdQuaternion_t MultiplyQuaternion(vr::HmdQuaternion_t q, vr::HmdQuaternion_
 	result.x = (r.w * q.x + r.x * q.w - r.y * q.z + r.z * q.y);
 	result.y = (r.w * q.y + r.x * q.z + r.y * q.w - r.z * q.x);
 	result.z = (r.w * q.z - r.x * q.y + r.y * q.x + r.z * q.w);
-	
+
 	return result;
 }
 
