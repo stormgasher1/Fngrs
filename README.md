@@ -32,7 +32,7 @@ OpenVR provides a layer for drivers to interact with applications. The driver fo
 | Arduino nano | 2 | Clones are available for around £10 for a pack of 3 |
 | Buttons | (~4) | It is possible to add as many buttons as the arduino supports, or none at all - it's up to you how many you want |
 | Joystick | (2) | It's not essential to use them, but if you are going to buy some, it's a good idea to get ones with buttons in-built |
-| A - Mini B Cable | 2 (~5m) | For connecting the arduinos to a computer. The length you choose is up to you and you're playspace, but ~5m is a good length |
+| A - Mini B Cable | 2 (~5m) | For connecting the arduinos to a computer. The length you choose is up to you and your playspace, but ~5m is a good length |
 | Mini Breadboard | 2 | For wiring the components together. You could also use a prototype board for a more permanent solution |
 | PTFE Tubing | ~10cm | I cut them up to use on the fingers as guides for the wire, but more permanent solutions like threading the wires through the glove could also be used. PTFE tubing is a common thing to have in 3D printing |
 | Elastic chord | ~ 1m | This is used to secure the 3d printed part to the hand. Button hole elastic works well. |
