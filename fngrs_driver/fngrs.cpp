@@ -48,29 +48,25 @@ public:
 	string m_serial_number;
 	vr::HmdVector3_t m_offset_vector;
 
-	bool m_found_controller;
-
 	atomic<bool> m_active;
 
+	thread m_skeletal_thread;
 	thread m_pose_thread;
 
-	atomic<bool> m_found_arduino;
-
-	thread m_skeletal_thread;
-
+	bool m_found_controller;
 	int m_controller_id;
 
 	Serial* m_arduino_serial;
+	char m_arduino_port[1024];
+
+	atomic<bool> m_found_arduino;
 
 	char receivedString[MAX_DATA_LENGTH];
 
-	char m_arduino_port[1024];
-
 	int m_last_component_value[6] = { 0,0,0,0,0,0 };
+	VRInputComponentHandle_t m_h_component_values[8];
 
 	int m_frame_count;
-
-	VRInputComponentHandle_t m_h_component_values[8];
 
 	Fngrs()
 		: m_found_controller(false),
@@ -109,14 +105,10 @@ public:
 		VRProperties()->SetStringProperty(props, Prop_InputProfilePath_String, device_input_profile_path);
 		VRProperties()->SetStringProperty(props, Prop_ControllerType_String, device_controller_type);
 
-		//Setup joystick
+		//Setup buttons and joysticks
 		vr::VRDriverInput()->CreateScalarComponent(props, "/input/joystick/x", &m_h_component_values[ComponentIndex::JOYSTICK_X], VRScalarType_Absolute, VRScalarUnits_NormalizedTwoSided);
 		vr::VRDriverInput()->CreateScalarComponent(props, "/input/joystick/y", &m_h_component_values[ComponentIndex::JOYSTICK_Y], VRScalarType_Absolute, VRScalarUnits_NormalizedTwoSided);
-
-		//Setup buttons
 		vr::VRDriverInput()->CreateBooleanComponent(props, "/input/joystick/click", &m_h_component_values[ComponentIndex::JOYSTICK_BTN]);
-
-
 		vr::VRDriverInput()->CreateBooleanComponent(props, "/input/A/click", &m_h_component_values[ComponentIndex::BTN_A]);
 
 		//TODO: this should be a scalar component, so that users can set their own grip poses, but for now, it's a boolean, as we need to figure out the best way for deciding the value of each finger.
@@ -124,6 +116,7 @@ public:
 
 		//This haptic component doesn't do anything (at least, yet), but some games require it to be bound to something, so just create a component for them to use.
 		vr::VRDriverInput()->CreateHapticComponent(props, "output/haptic", &m_h_component_values[7]);
+
 
 		float c_x_offset = vr::VRSettings()->GetFloat(c_settings_section, "x_offset");
 		float c_y_offset = vr::VRSettings()->GetFloat(c_settings_section, "y_offset");
@@ -216,7 +209,7 @@ public:
 
 				vr::HmdMatrix33_t rotation_matrix = Get33Matrix(matrix);
 
-				vr::HmdVector3_t vector_offset = GetVectorOffset(rotation_matrix, m_offset_vector);
+				vr::HmdVector3_t vector_offset = MultiplyMatrix(rotation_matrix, m_offset_vector);
 
 				m_pose.vecPosition[0] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[0][3] + vector_offset.v[0];
 				m_pose.vecPosition[1] = hmd_pose[m_controller_id].mDeviceToAbsoluteTracking.m[1][3] + vector_offset.v[1];
@@ -305,7 +298,6 @@ public:
 			//Read the data into the buffer
 			int readResult = m_arduino_serial->ReadData(receivedString, MAX_DATA_LENGTH);
 
-			receivedString[MAX_DATA_LENGTH - 1] = '\00';
 			if (readResult != 0) {
 
 				string str = receivedString;
@@ -314,8 +306,7 @@ public:
 
 				std::vector<std::string> tokens;
 
-				while (getline(ss, buf, '&'))
-					tokens.push_back(buf);
+				while (getline(ss, buf, '&')) tokens.push_back(buf);
 
 				//Index at which to update the bones, this starts at the root index finger bone.
 				int bone_index = 6;
